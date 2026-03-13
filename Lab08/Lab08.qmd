@@ -1,0 +1,177 @@
+---
+title: "Lab08: Breast Cancer Mini Project"
+author: "Minzhou Ou (PID: A17293812)"
+format: pdf
+---
+
+## Background
+
+In today's class we will be employing all the R techniques for data analysis that we have learned thus far - including the machine learning methods of clustering and PCA - to analyze real breast cancer biopsy data. 
+
+## Data Import
+
+The data is in CSV format:
+
+```{r}
+WI_cancer <- read.csv("WisconsinCancer.csv", row.names=1)
+```
+
+wee peak at the data
+```{r}
+head(WI_cancer,3)
+WI_cancer.data <- WI_cancer[, -1]
+```
+
+> Q1. How many observations are in this dataset?
+
+```{r}
+nrow(WI_cancer)
+```
+
+> Q2. How many of the observations have a malignant diagnosis?
+
+```{r}
+sum(WI_cancer$diagnosis == "M")
+tbl <- table(WI_cancer$diagnosis)
+pct <- tbl / sum(tbl) * 100
+tbl
+pct
+```
+
+> Q3. How many variables/features in the data are suffixed with _mean?
+
+```{r}
+length(grep("_mean", colnames(WI_cancer)))
+```
+
+We need to remove the `diagnosis` column before we do any further analysis of this dataset - we don't want to pass this to PCA etc. We will save it as a separate wee vector that we ca use later to compare our findings to those of experts
+
+```{r}
+unsupervised <- WI_cancer[ ,-1]
+diagnosis <- WI_cancer$diagnosis
+```
+
+## Principal Component Analysis (PCA)
+
+The main function in base R is called `prcomp()` we will use the optional argument `scale=TRUE` here as the data columns/features/dimensions are on very different scales in the original data set
+
+```{r}
+WI_cancer.pr <- prcomp(unsupervised, scale=T)
+
+```
+
+> Q4. From your results, what proportion of the original variance is captured by the first principal component (PC1)?
+
+```{r}
+summary(WI_cancer.pr)
+```
+The proportion of the PC1 varaince is 44.27%
+
+> Q5. How many principal components (PCs) are required to describe at least 70% of the original variance in the data?
+
+We need at least PC3
+
+> Q6. How many principal components (PCs) are required to describe at least 90% of the original variance in the data?
+
+We need PC7 to get 90%
+
+> Q7. What stands out to you about this plot? Is it easy or difficult to understand? Why?
+
+```{r}
+biplot(WI_cancer.pr)
+```
+
+The data looks messy and hard to follow, because the values are not normalized, and there's too much data doesn't show trend or anything
+
+```{r}
+library(ggplot2)
+
+ggplot(WI_cancer.pr$x) +
+  aes(PC1, PC2, col=diagnosis) +
+  geom_point()
+```
+
+## Variance
+
+```{r}
+pr.var <- WI_cancer.pr$sdev^2
+head(pr.var)
+pve <- pr.var / sum(pr.var)
+plot(c(1,pve), xlab = "Principal Component", 
+     ylab = "Proportion of Variance Explained", 
+     ylim = c(0, 1), type = "o")
+barplot(pve, ylab = "Percent of Variance Explained",
+     names.arg=paste0("PC",1:length(pve)), las=2, axes = FALSE)
+axis(2, at=pve, labels=round(pve,2)*100 )
+```
+
+> Q9. For the first principal component, what is the component of the loading vector (i.e. wisc.pr$rotation[,1]) for the feature concave.points_mean? This tells us how much this original feature contributes to the first PC. Are there any features with larger contributions than this one?
+
+```{r}
+pc1 <- WI_cancer.pr$rotation[,"PC1"]
+WI_cancer.pr$rotation["concave.points_mean", 1]
+min(pc1)
+```
+
+
+## 4. Hierarchical clustering
+
+```{r}
+data.scaled <- scale(unsupervised)
+data.dist <- dist(data.scaled)
+wisc.hclust <- hclust(data.dist, method = "ward.D2")
+plot(wisc.hclust)
+abline(wisc.hclust, col="red", lty=2)
+```
+
+## Combining methods
+
+The idea here is taht I can take my new variables (the PCs) that are better descriptors of the data-set than the original features (i.e. the 30 columns in `wisc.data`) and use these as a basis of clustering. 
+
+```{r}
+pc.dist <- dist(WI_cancer.pr$x[ ,1:3])
+wisc.pr.hclust <- hclust(pc.dist, method = "ward.D2")
+plot(wisc.pr.hclust)
+grps <- cutree(wisc.pr.hclust, k=2)
+table(grps)
+```
+I can now run `table()` with both myu clustering `grps` and the expert `diagnosis`
+
+```{r}
+table(grps, diagnosis)
+```
+
+Our cluster "1" has 179 "M" diagnosis
+or cluster "2" has 333 "B" diagnosis
+
+179 True Positive
+24 False Positive
+333 True Negative
+33 False negative
+
+Sensitivity: TP/(TP+FN)
+```{r}
+sensitivity <- 179/sum(179,33)
+sensitivity
+```
+Specificity: TN/(TN+FP)
+```{r}
+specificity <- 333/sum(333,24)
+specificity
+```
+
+## Prediction
+
+We can use our PCA model for prediction of new un-seen data
+
+```{r}
+url <- "https://tinyurl.com/new-samples-CSV"
+new <- read.csv(url)
+npc <- predict(WI_cancer.pr, newdata=new)
+npc
+plot(WI_cancer.pr$x[,1:2], col=grps)
+points(npc[,1], npc[,2], col="blue", pch=16, cex=3)
+text(npc[,1], npc[,2], c(1,2), col="white")
+```
+
+
