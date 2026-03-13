@@ -1,0 +1,27 @@
+---
+title: "Lab07: Machine Learning 1"
+author: "Minzhou Ou (PID: A17293812)"
+format: html
+---
+
+## Background
+
+Today we will begin out exploration of some important machine learnig methods, namely **clusterring** and **dimensionnality reductionn**.
+
+Let's make up some input data for clusterinng where we kow what the natural "clusters" are
+
+The function `rnorm()` can be useful here.
+
+```{r}
+hist(rnorm(5000, mean=10))
+```
+
+> Q. Generate 30 random numbers centered at +3 and another 30 at -3
+
+```{r}
+temp <- c(rnorm(30, mean=3),
+          rnorm(30, mean=-3))
+x <- cbind(x=temp, y=rev(temp))
+```
+
+## K-means clustering
