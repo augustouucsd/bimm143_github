@@ -1,0 +1,197 @@
+---
+title: "Lab06: R Functions"
+author: "Minzhou Ou (PID: A17293812)"
+format: pdf
+---
+
+## Backgroound
+
+Functions are at the heart of using R. Everything we do involves calling and using functions (from data input, analysis to results)
+
+All functions in R have at least 3 things:
+
+1. A **name** the thing we use to call the function.
+2. One or more input **arguments** that are comma separated
+3. The **body**, lines of code between curly `{ }` that does the work of the function
+
+## A first function
+
+Let's write a silly wee function to add some number:
+
+```{r}
+add <- function(x) {
+  x + 1
+}
+```
+
+Let's try it out
+
+```{r}
+add(100)
+```
+
+Will this work
+
+```{r}
+add(c(100, 200, 300))
+```
+
+Modify to be more useful and add more than just 1
+
+```{r}
+add <- function(x, y) {
+  x + y
+}
+```
+
+```{r}
+add(100, 10)
+```
+
+Will this work?
+
+```{r}
+#add(199)
+```
+
+```{r}
+plot(1: 10, col = "blue", typ = "b")
+```
+
+```{r}
+log(10, base = 10)
+```
+
+> **N.B.** input argument can be **required** or **optional**. The later have a fall-back default that is specifed in the function code with an equals sign. 
+
+```{r}
+#add(x = 100, y = 200, z = 300)
+```
+
+## A second function
+
+All functions in R look like this
+
+```
+name <- function(arg) {
+  body
+}
+```
+
+The `sample()` function in R ...
+
+```{r}
+sample(1:10, size = 4)
+```
+
+> Q. Returnn 12 numbers picked ranndomly from the input 1: 10
+
+```{r}
+sample(1:10, size = 12, replace = TRUE)
+```
+
+> Q. Write the code to generate a random 12 nucleotide long DNA sequence
+
+```{r}
+sample(c('A','C','G','T'), size = 12, replace = TRUE)
+```
+
+> Q. Write a first versionn function called `generate_dna()` that generates a user specified lenngth `n` random DNA sequence. It is compact
+
+```{r}
+generate_dna <- function(n) {
+  nucleotide <- c('A','C','G','T')
+  DNA <- sample(nucleotide, size = n, replace = TRUE)
+  paste(DNA, collapse="")
+}
+generate_dna(pi)
+```
+
+```{r}
+# Example pattern (not using your bases)
+x <- c("H", "E", "L", "L", "O")
+paste(x, collapse = "hello")
+# returns "HELLO"
+```
+
+> Q. Give the user an option to return FASTA format output sequence or standard multi-elemment vector format?
+
+```{r}
+generate_dna <- function(n=6, fasta=TRUE) {
+  nucleotide <- c('A','C','G','T')
+  DNA <- sample(nucleotide, size = n, replace = TRUE)
+  if(fasta) {
+    DNA <- paste(DNA, collapse="")
+    cat("Hello...")
+  }
+  else{
+    cat("...from the other side...")
+  }
+  return(DNA)
+}
+```
+```{r}
+generate_dna(10)
+generate_dna(10, FALSE)
+```
+
+## A new cool function
+
+> Q. Write a function called `generate_protein()` that generates a user specifed length protein sequence in FASTA like format
+
+```{r}
+generate_protein <- function(length){
+  amino_acides <- c("A","R","N","D","C","E","Q","G","H","I","L","K","M","F","P","S","T","W","Y","V")
+  proteins <- sample(amino_acides, size = length, replace = TRUE)
+  proteins <- paste(proteins, collapse="")
+  return(proteins)
+}
+
+generate_protein(10)
+```
+
+
+> Q. Use your new `generate_protein()` function to generate sequences between length 6 and 12 amino-acides in length and check of any of these are unique in nature (i.e. found in the NR database at NCBI)
+
+```{r}
+library(rentrez)
+```
+
+```{r}
+generate_protein <- function(){
+  amino_acides <- c("A","R","N","D","C","E","Q","G","H","I","L","K","M","F","P","S","T","W","Y","V")
+  length = sample(6:12, replace = TRUE)
+  proteins <- sample(amino_acides, size = length, replace = TRUE)
+  proteins <- paste(proteins, collapse="")
+  return(proteins)
+}
+generate_protein()
+```
+```{r}
+generate_protein <- function(length){
+  amino_acides <- c("A","R","N","D","C","E","Q","G","H","I","L","K","M","F","P","S","T","W","Y","V")
+  # length = sample(6:12, replace = TRUE)
+  proteins <- sample(amino_acides, size = length, replace = TRUE)
+  proteins <- paste(proteins, collapse="")
+  return(proteins)
+}
+for(i in 6: 12){
+  cat(">", i, "\n", sep = "")
+  cat(generate_protein(i), "\n")
+}
+```
+They can be blast
+
+
+
+```{r}
+library(bio3d)
+protein_drug_iteraction <- function(pdi_seq, chain, elety){
+  pdi_sequence <- read.pdb("pdi_seq")
+  seq_trim <- trim.pdb(pdi_sequence, chain=chain, elety=elety)
+  seq_b <- seq_trim$atom$b
+  plotb3(seq_b, sse=seq_trim, typ="l", ylab="Bfactor")
+  return(seq_trim)
+} 
+```
+
